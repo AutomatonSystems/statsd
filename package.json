@@ -1,0 +1,24 @@
+{
+  "name": "automaton-statsd",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "A zero-dependancy node statsd client",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AutomatonSystems/statsd.git"
+  },
+  "keywords": [
+    "statsd",
+    "automaton"
+  ],
+  "author": "Simon Baldwin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AutomatonSystems/statsd/issues"
+  },
+  "homepage": "https://github.com/AutomatonSystems/statsd#readme"
+}
