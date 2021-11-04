@@ -9,16 +9,16 @@ const TYPES = {
 /**
  * Very basic statsd server for node; as I couldn't get any of the more advanced clients
  * working against our graphite endpoint
- * 
+ *
  */
 export default class StatsD{
 
 	/**
-	 * 
+	 *
 	 * Create a new client; connecting to the host  an port provided.
-	 * 
-	 * @param {String} host 
-	 * @param {Number} port 
+	 *
+	 * @param {String} host
+	 * @param {Number} port
 	 */
 	constructor(host, port=8125){
 		this._host = host;
@@ -30,9 +30,9 @@ export default class StatsD{
 
 	/**
 	 * returns a (name)spaced proxy on this connection
-	 * 
-	 * @param {String} prefix 
-	 * 
+	 *
+	 * @param {String} prefix
+	 *
 	 * @returns {StatsDProxy}
 	 */
 	space(prefix){
@@ -52,52 +52,52 @@ export default class StatsD{
 
 	/**
 	 * Use count for values that are countable over a time period;
-	 * eg DB updates 
-	 * 
+	 * eg DB updates
+	 *
 	 * @param {String} key key to store the count against
 	 * @param {Number} value value of the counter
-	 * 
-	 * @returns {StatsD}
+	 *
+	 * @returns {Promise<StatsD>}
 	 */
-	count(key, value=1){
-		this._stat(key, value, TYPES.COUNTER);
+	async count(key, value=1){
+		await this._stat(key, value, TYPES.COUNTER);
 		return this;
 	}
 
 	/**
 	 * Use gauge for values that are measurable at a point in time
 	 * eg CPU load
-	 * 
+	 *
 	 * @param {String} key key to store the count against
 	 * @param {Number} value value of the gauge
-	 * 
-	 * @returns {StatsD}
+	 *
+	 * @returns {Promise<StatsD>}
 	 */
-	gauge(key, value){
-		this._stat(key, value, TYPES.GAUGE);
+	async gauge(key, value){
+		await this._stat(key, value, TYPES.GAUGE);
 		return this;
 	}
 
 	/**
 	 * Use time for an operation that the time taken to perform is of interest
 	 * eg http request/response ms time taken
-	 * 
+	 *
 	 * @param {String} key key to store the count against
 	 * @param {Number} value time in ms the event took
-	 * 
-	 * @returns {StatsD}
+	 *
+	 * @returns {Promise<StatsD>}
 	 */
-	timer(key, value){
-		this._stat(key, value, TYPES.TIMER);
+	async timer(key, value){
+		await this._stat(key, value, TYPES.TIMER);
 		return this;
 	}
 
 	/**
-	 * 
-	 * Closes the statd connection; 
-	 * 
+	 *
+	 * Closes the statd connection;
+	 *
 	 * Waits 10s for active packets to send unless force=true.
-	 * 
+	 *
 	 * @param {Boolean} force (false) if the 10s wait should be skipped
 	 */
 	close(force = false){
@@ -111,17 +111,23 @@ export default class StatsD{
 		}
 	}
 
-	_stat(key, value, type){
-		this._send(key, value, type);
+	async _stat(key, value, type){
+		await this._send(key, value, type);
 	}
 
-	_send(key, value, type){
+	async _send(key, value, type){
 		this.sending++;
-		this.client.send(`${key}:${value}|${type}`, this._port, this._host,  (error)=>{
-			this.sending--;
-			if(error!=null)
-				console.warn(error);
-		});
+		return new Promise((resolve, reject) => {
+			this.client.send(`${key}:${value}|${type}`, this._port, this._host, (error)=>{
+				this.sending--;
+				if(error!=null){
+					console.warn(error);
+					reject(error);
+				}else{
+					resolve();
+				}
+			});
+		})
 	}
 }
 
@@ -131,13 +137,13 @@ export default class StatsD{
 class StatsDProxy{
 
 	/**
-	 * 
-	 * @param {StatsD} statsd 
-	 * @param {String} prefix 
+	 *
+	 * @param {StatsD} statsd
+	 * @param {String} prefix
 	 */
 	constructor(statsd, prefix){
 		this.parent = statsd;
-		
+
 		if(!prefix.endsWith('.')){
 			prefix += '.';
 		}
@@ -145,9 +151,9 @@ class StatsDProxy{
 	}
 
 	/**
-	 * 
-	 * @param {String} prefix 
-	 * 
+	 *
+	 * @param {String} prefix
+	 *
 	 * @returns {StatsDProxy}
 	 */
 	space(prefix){
@@ -156,43 +162,43 @@ class StatsDProxy{
 
 	/**
 	 * Use count for values that are countable over a time period;
-	 * eg DB updates 
-	 * 
+	 * eg DB updates
+	 *
 	 * @param {String} key key to store the count against
 	 * @param {Number} value value of the counter
-	 * 
-	 * @returns {StatsDProxy}
+	 *
+	 * @returns {Promise<StatsDProxy>}
 	 */
-	count(key, value=1){
-		this.parent.count(this.prefix+key, value);
+	async count(key, value=1){
+		await this.parent.count(this.prefix+key, value);
 		return this;
 	}
 
 	/**
 	 * Use gauge for values that are measurable at a point in time
 	 * eg CPU load
-	 * 
+	 *
 	 * @param {String} key key to store the count against
 	 * @param {Number} value value of the gauge
-	 * 
-	 * @returns {StatsDProxy}
+	 *
+	 * @returns {Promise<StatsDProxy>}
 	 */
-	gauge(key, value){
-		this.parent.gauge(this.prefix+key, value);
+	async gauge(key, value){
+		await this.parent.gauge(this.prefix+key, value);
 		return this;
 	}
 
 	/**
 	 * Use time for an operation that the time taken to perform is of interest
 	 * eg http request/response ms time taken
-	 * 
+	 *
 	 * @param {String} key key to store the count against
 	 * @param {Number} value time in ms the event took
-	 * 
-	 * @returns {StatsDProxy}
+	 *
+	 * @returns {Promise<StatsDProxy>}
 	 */
-	timer(key, value){
-		this.parent.timer(this.prefix+key, value);
+	async timer(key, value){
+		await this.parent.timer(this.prefix+key, value);
 		return this;
 	}
 }
