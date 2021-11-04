@@ -1,7 +1,7 @@
 {
   "name": "automaton-statsd",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A zero-dependancy node statsd client",
   "main": "index.js",
   "scripts": {
